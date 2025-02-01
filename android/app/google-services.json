@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "694303179751",
+    "project_id": "milvertonrealty-9d49f",
+    "storage_bucket": "milvertonrealty-9d49f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:694303179751:android:8d7c23d669e7b69fb2b342",
+        "android_client_info": {
+          "package_name": "com.milverton.realty.milvertonrealty"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKYDJsXUAJwjunPc3_CDcjrzrvnwKBgjI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
