@@ -1,4 +1,6 @@
 
+import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:milvertonrealty/utils/constants.dart';
@@ -49,4 +51,60 @@ class _CustomToggleButtonsState extends State<CustomToggleButtons> {
       children: widget.options.map((option) => Text(option)).toList(),
     );
   }
+}
+class ToggleButtonWidget extends StatefulWidget {
+  bool isVacant = false;
+  ToggleButtonWidget({required this.isVacant});
+  @override
+  _ToggleButtonWidgetState createState() => _ToggleButtonWidgetState();
+}
+
+class _ToggleButtonWidgetState extends State<ToggleButtonWidget> {
+  //bool isVacant = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          widget.isVacant = !widget.isVacant;
+        });
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 5, horizontal: 7),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          gradient: LinearGradient(
+            colors: widget.isVacant
+                ? [Colors.orange.shade200, Colors.orange.shade400]
+                : [Colors.green.shade200, Colors.green.shade400],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              spreadRadius: 2,
+              blurRadius: 5,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Text(
+          widget.isVacant ? "Vacant" : "Occupied",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class MyCustomScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+    PointerDeviceKind.touch, // For touch devices like smartphones
+    PointerDeviceKind.mouse, // For mouse devices on desktop or web
+  };
 }

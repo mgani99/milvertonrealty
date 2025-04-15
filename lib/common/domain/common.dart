@@ -3,7 +3,6 @@
 import 'dart:convert';
 
 import 'package:milvertonrealty/common/domain/base_domain.dart';
-import 'package:milvertonrealty/common/model/common_model.dart';
 
 class Unit extends BaseDomain  {
   int id =0;
@@ -12,18 +11,15 @@ class Unit extends BaseDomain  {
   final List<int> leaseHistory;
   final int currentLeaseId;
   int bedrooms = 0;
-  double bathrooms= 0;
+  double bathrooms= 0.0;
   int livingSpace= 0;
 //main house isclass Unitclass Unit always 0, apartment by default 1, garage 2, parking 3, all other 4;
   String address="";
   //double rent = 0.0;
   int propId=0;
-  int tenantId=0;
   String pictureURL = "";
 
   static var rootDBLocation = "Units/";
-
-
 
 
   Unit( super.id, this.unitType, this.leaseHistory, this.currentLeaseId, this.name){
@@ -41,9 +37,7 @@ class Unit extends BaseDomain  {
     data['bathrooms'] = this.bathrooms;
     data['livingSpace'] = this.livingSpace;
     data['address'] = this.address;
-    //data['rent'] = this.rent;
     data['propId'] = this.propId;
-    data['tenantId'] = this.tenantId;
     data['leaseHistory'] = jsonEncode(this.leaseHistory);
     data['pictureURL'] = this.pictureURL;
     return data;
@@ -55,7 +49,6 @@ class Unit extends BaseDomain  {
   @override
   String toString() {
     String retVal = "{id: $id, name:'$name',unittype:'$unitType'}";
-    // TODO: implement toString
     return retVal;
   }
 
@@ -71,22 +64,12 @@ class Unit extends BaseDomain  {
         (map['type']) ?? "", [], (map['currentLeaseId'] ?? 0),
         map['name'] ?? "");
     //retVal.id = int.parse(map['id'] ?? "0");
-    retVal.bathrooms = (map.containsKey('bathrooms'))
-        ? double.parse(map['bathrooms'] ?? "0.0")
-        : 0;
-    retVal.bedrooms = int.parse(map['bedrooms'] ?? "0");
-    retVal.livingSpace = int.parse(map['livingSpace'] ?? "0");
-
-
+    retVal.bathrooms = map.containsKey('bathrooms')? double.parse(map['bathrooms'] ??"0.0") :  0.0;
+    retVal.bedrooms = map['bedrooms'] ?? 0;
+    retVal.livingSpace = map['livingSpace'] ?? 0;
     retVal.address = map['address'] ?? "";
-    //  retVal.rent =  map['rent'] ?? 0.0;
     retVal.propId = map['propId'] ?? 0;
-    retVal.tenantId = map['tenantId'] ?? 0;
     retVal.pictureURL = map['pictureURL'] ?? "";
-
-
-
-
     return retVal;
   }
 
@@ -96,6 +79,7 @@ class Unit extends BaseDomain  {
     // TODO: implement getObjDBLocation
     return Unit.rootDBLocation + id.toString();
   }
+
 
 }
 
@@ -118,9 +102,9 @@ class LeaseDetails extends BaseDomain{
   bool operator ==(Object other) => other is LeaseDetails && other.id == id;
 
   static LeaseDetails fromMap(Map<dynamic,dynamic> map) {
-    LeaseDetails retVal = LeaseDetails(0, map['startDate']??"", map['endDate']??"", List<int>.from(json.decode(map['tenantId'])??[] ),
+    LeaseDetails retVal = LeaseDetails(0, map['startDate']??"", map['endDate']??"", List<int>.from(json.decode(map['tenantIds'])??[] ),
         double.parse(map['rent']??"0.0"), double.parse(map['securityDeposit']??"0.0"));
-    retVal.id = int.parse(map['id']??"0");
+    retVal.id = map['id']?? 0;
     retVal.isVacant = bool.parse(map['isVacant']) ?? false;
     retVal.isYearly = bool.parse(map['isYearly']) ?? false;
     return retVal;
@@ -155,13 +139,15 @@ class LeaseDetails extends BaseDomain{
 
 
 class Tenant extends BaseDomain {
-  static String rootDBLocation = "Tenants/";
+  static String rootDBLocation = "Tenant/";
 
   //late int id =0;
   final String name;
   final String bankAccountId;
   final String phoneNumber;
+  String workPhoneNumber = "";
   final String email;
+  String tenantNote ="";
   Map<String, int> tokens = {}; //tokenize the tenant name for searching
 
   Tenant(super.id, this.name, this.bankAccountId, this.phoneNumber,
@@ -185,8 +171,9 @@ class Tenant extends BaseDomain {
     retVal = Tenant(
         map['id'], map['name'], map['bankAccountId'], map['phoneNumber'],
         map['email']);
-    retVal.id = int.parse(map['id'] ?? "0");
-
+    retVal.id = map['id'] ?? 0;
+    retVal.workPhoneNumber = map['workPhoneNumber'];
+    retVal.tenantNote = map['tenantNote'];
     retVal.tokens[retVal.name.toUpperCase()] = 1;
 
     List<String> subString = [];
@@ -196,7 +183,7 @@ class Tenant extends BaseDomain {
       }
     });
     retVal.tokens.addAll({for (var item in subString) '$item': 1});
-    //print(retVal);
+
     return retVal;
   }
 

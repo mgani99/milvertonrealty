@@ -8,6 +8,7 @@ class IncrementDecrementTextBox extends StatefulWidget {
 
   IncrementDecrementTextBox({this.initialValue = 0, required this.onChanged});
 
+
   @override
   _IncrementDecrementTextBoxState createState() =>
       _IncrementDecrementTextBoxState();
@@ -48,6 +49,7 @@ class _IncrementDecrementTextBoxState extends State<IncrementDecrementTextBox> {
         controller: _controller,
         textAlign: TextAlign.center,
         keyboardType: TextInputType.number,
+        onChanged: (value) => widget.onChanged(int.parse(value)),
         decoration: InputDecoration(
           contentPadding: EdgeInsets.all(3),
           suffixIcon: Column(

@@ -1,65 +1,136 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
+import 'package:http/http.dart' as http;
+
+
 import 'dart:io'; // For handling file paths
 import 'package:image_picker/image_picker.dart'; // To pick images
-import 'package:image_picker/image_picker.dart';
 import 'package:milvertonrealty/utils/google_drive.dart';
 
 
-void main() {
-  runApp(MyApp());
-}
 
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Decorated Upload Button',
-      home: UnitPictureScreen(),
-    );
-  }
-}
+
 
 class UnitPictureScreen extends StatefulWidget {
+  final Map<String, dynamic> propertyData;
+
+  const UnitPictureScreen({super.key, required this.propertyData});
+
   @override
   _UnitPictureScreenState createState() => _UnitPictureScreenState();
 }
-class AuthenticatedClient extends BaseClient {
+class AuthenticatedClient extends http.BaseClient {
   final Map<String, String> _headers;
-  final Client _client = Client();
+  final http.Client _client = http.Client();
 
   AuthenticatedClient(this._headers);
 
   @override
-  Future<StreamedResponse> send(BaseRequest request) {
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
     request.headers.addAll(_headers);
     return _client.send(request);
   }
 }
 class _UnitPictureScreenState extends State<UnitPictureScreen> {
   final GoogleDriveManager driveManager = GoogleDriveManager();
-  final String unitName = "A1";
+  String unitName = "";
   bool _isSaving= false;
-  final Map<String, List<File>> roomImages = {
-    'Bedroom': [],
+  Map<String, List<File>> roomImages = {
     'Bathroom': [],
     'Hallway': [],
     'Kitchen': [],
     'Living Room': [],
   };
 
+  @override
+  void didChangeDependencies () {
+    super.didChangeDependencies();
+    int bedroom  = widget.propertyData['bedrooms'] ?? 0;
+    if (bedroom >= 1) {
+      for (int i=0; i< bedroom; i++) {
+        roomImages['Bedroom' + i.toString()] = [];
+      }
+    }
+    else {
+      roomImages.remove('Bedroom');
+    }
+    this.unitName = widget.propertyData['unitName'];
+  }
+
+
   final ImagePicker _picker = ImagePicker();
 
    Future<void> _pickImage(String room) async {
-    final List<XFile>? pickedFile =
-    await _picker.pickMultiImage();
-    if (pickedFile != null && pickedFile.isNotEmpty) {
-      setState(() {
-        roomImages[room]!.addAll(pickedFile.map((xfile) => File(xfile.path)).toList());
-      });
-    }
+     // if (kIsWeb) {
+     //   // Web: Use HTML File Picker
+     //   final html.FileUploadInputElement uploadInput = html.FileUploadInputElement();
+     //   uploadInput.accept = 'image/*';
+     //   uploadInput.click();
+     //
+     //   final Completer<Map<String, dynamic>> completer = Completer();
+     //
+     //   uploadInput.onChange.listen((event) async {
+     //     final files = uploadInput.files;
+     //     if (files != null && files.isNotEmpty) {
+     //       final file = files[0];
+     //       final reader = html.FileReader();
+     //       reader.readAsDataUrl(file);
+     //       reader.onLoadEnd.listen((_) {
+     //         completer.complete({"name": file.name, "imageFile": reader.result});
+     //       });
+     //       final Map<String, dynamic> filemap = await completer.future;
+     //       File f = filemap['imageFile'];
+     //       roomImages[room] = [f];
+     //       //roomImages[room] = [file];
+     //     } else {
+     //       completer.complete({"error": "No file selected"});
+     //     }
+     //   });
+     //
+     //   //return completer.future;
+     // }
+     // else {
+
+     if (kIsWeb) {
+       Uint8List? bytes;
+       String? name;
+       // On the web, use file_picker which returns the file bytes.
+       FilePickerResult? result = await FilePicker.platform.pickFiles(
+         type: FileType.image,
+         allowMultiple: false,
+       );
+       if (result != null && result.files.isNotEmpty) {
+         List<File> tempFiles = [];
+         List<Uint8List> _webImages = [];
+         for (var platformFile in result.files) {
+           // Check if a file path is available (non-web platforms).
+           if (platformFile.path != null) {
+             File file = File(platformFile.path!);
+             tempFiles.add(file);
+           }
+         }
+         // final file = result.files.first;
+         // bytes = file.bytes;
+         // name = file.name;
+         setState(() {
+           roomImages[room]!.addAll(tempFiles);
+         });
+       }
+     }
+     else {
+       final List<XFile>? pickedFile =
+       await _picker.pickMultiImage();
+       if (pickedFile != null && pickedFile.isNotEmpty) {
+         setState(() {
+           roomImages[room]!.addAll(
+               pickedFile.map((xfile) => File(xfile.path)).toList());
+         });
+       }
+     }
   }
 
   void _deleteImage(String room, int index) {

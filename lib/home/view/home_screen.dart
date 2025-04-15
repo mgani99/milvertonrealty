@@ -173,7 +173,7 @@ class _HomeScreen extends State<HomeScreen> {
               ? FluentIcons.door_16_filled
               : FluentIcons.conference_room_24_regular,
         ),
-        label: 'Repair');
+        label: 'Tenant \nLeads');
   }
 
 

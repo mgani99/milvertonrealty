@@ -60,4 +60,15 @@ class BaseModel with ChangeNotifier{
 
   }
 
+  void update(String rootDBLocation, String s, data2) async{
+    final dbRef = MR_DBService().getDBRef(rootDBLocation);
+    // Updating an attribute (e.g., changing the user's age)
+    await dbRef.update({
+      s: data2,
+    });
+    notifyListeners();
+
+
+  }
+
 }

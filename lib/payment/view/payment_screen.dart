@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(PaymentTrackerApp());
-}
+
 
 class PaymentTrackerApp extends StatelessWidget {
   @override

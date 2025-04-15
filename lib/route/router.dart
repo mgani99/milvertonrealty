@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:milvertonrealty/auth/view/login_screen2.dart';
 import 'package:milvertonrealty/auth/view/signup_screen.dart';
 import 'package:milvertonrealty/home/view/home_screen.dart';
+import 'package:milvertonrealty/propertysetup/view/property_view.dart';
+import 'package:milvertonrealty/propertysetup/view/propertysetup_screen.dart';
 import 'package:milvertonrealty/propertysetup/view/unit_picture_screen.dart';
+import 'package:milvertonrealty/propertysetup/view/unitsetup_screen.dart';
 import 'package:milvertonrealty/route/route_constants.dart';
 import 'package:milvertonrealty/user/view/new_user.dart';
 import 'package:milvertonrealty/user/view/profile_page.dart';
@@ -90,11 +93,33 @@ Route<dynamic> generateRoute(RouteSettings settings) {
        return MaterialPageRoute(
          builder: (context) => const NewUserPage(),
     );
+    case propertyViewRoute:
+      return MaterialPageRoute(
+        builder: (context) =>  PropertyView(),
+      );
 
     case unitPictureScreenRoute:
       return MaterialPageRoute(
-        builder: (context) =>  UnitPictureScreen(),
+        builder: (context) {
+          Map<String,dynamic> unitData = settings.arguments as Map<String,dynamic> ?? {};
+          return UnitPictureScreen(propertyData: unitData);
+        },
       );
+
+    case unitSetupScreen:
+      return MaterialPageRoute(
+        builder: (context) {
+          Map<String,dynamic> unitData = settings.arguments as Map<String,dynamic> ?? {};
+          return UnitSetupScreen(propertyData: unitData);
+        },
+      );
+    case propertySetupScreen:
+      return MaterialPageRoute(
+        builder: (context) =>  PropertySetup(),
+      );
+
+
+
     // case verificationMethodScreenRoute:
     //   return MaterialPageRoute(
     //     builder: (context) => const VerificationMethodScreen(),

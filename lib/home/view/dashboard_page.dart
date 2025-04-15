@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:milvertonrealty/auth/controller/auth_provider.dart';
 import 'package:milvertonrealty/common/domain/user.dart';
+import 'package:milvertonrealty/propertysetup/controller/propertyUnitController.dart';
 import 'package:milvertonrealty/user/view/new_user.dart';
 import 'package:milvertonrealty/utils/constants.dart';
 import 'package:provider/provider.dart';
@@ -63,6 +64,7 @@ class _DashBoardPageState extends State<DashBoardPage>
   Widget build(BuildContext context) {
 
     final controller =     Provider.of<AuthenticationRepository>(context, listen: true);
+    //final propertyUnitController = Provider.of<PropertySetupController>(context, listen: false);
     ReUser usr = controller.reUser!;
     return Scaffold(
       //ackgroundColor: ColorConstants.primaryWhiteColor,
@@ -142,7 +144,7 @@ class _DashBoardPageState extends State<DashBoardPage>
                       style: TextStyleConstants.homeMainTitle1,
                     ),
                    //Request Access to Apartment or Create Portfolio
-
+                    //Text(propertyUnitController.unitData.length.toString() as String),
                     //(usr.userType == "Owner") ?
 
                   ],

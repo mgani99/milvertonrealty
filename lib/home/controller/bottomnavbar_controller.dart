@@ -4,8 +4,10 @@ import 'package:milvertonrealty/auth/view/login_screen2.dart';
 import 'package:milvertonrealty/common/domain/user.dart';
 import 'package:milvertonrealty/home/view/dashboard_page.dart';
 import 'package:milvertonrealty/payment/view/payment_screen.dart';
+import 'package:milvertonrealty/payment/view/payment_tracker_screen.dart';
 import 'package:milvertonrealty/propertysetup/view/property_view.dart';
 import 'package:milvertonrealty/propertysetup/view/propertysetup_screen.dart';
+import 'package:milvertonrealty/propertysetup/view/tenant_lead.dart';
 import 'package:milvertonrealty/propertysetup/view/unitsetup_screen.dart';
 import 'package:milvertonrealty/repair/view/repair_screen.dart';
 import 'package:milvertonrealty/user/view/new_user.dart';
@@ -22,7 +24,7 @@ class NavBarController with ChangeNotifier {
     const LoginScreen2(),
     const NewUserPage(),
      PropertySetup(),
-     PaymentTrackerHomePage(),
+    PaymentScreen(),
     const ProfilePage()
   ];
 
@@ -39,10 +41,10 @@ class NavBarController with ChangeNotifier {
     else {
       if ("Owner" == reUser.userType) {
        return [ const DashBoardPage(),
-         UnitSetupScreen(),
+         TenantSearchScreen(),
          RepairIssueScreen(),
           PropertyView(),
-         PaymentTrackerHomePage(),
+         PaymentScreen(),
         const ProfilePage()];
       }
       else if ("Tenant" == reUser.userType || "Contractor" == reUser.userType ) {

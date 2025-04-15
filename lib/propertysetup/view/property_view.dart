@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:milvertonrealty/propertysetup/controller/propertyUnitController.dart';
+import 'package:milvertonrealty/route/route_constants.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -26,7 +27,10 @@ class _PropertyViewState extends State<PropertyView> {
   final String propertyName = "Milverton Realty Apartments";
   final String propertyAddress = "14315 Milverton Rd, Cleveland";
   bool isLoading = false;
+  late  PropertySetupController controller;
+
   // Sample data for unit cards
+  List<Map<String, dynamic>> filteredData =[];
   List<Map<String, dynamic>> cardData = [
   /*  {
       "unitName": "Unit A101",
@@ -54,29 +58,45 @@ class _PropertyViewState extends State<PropertyView> {
       "squareFeet": 1500,
     },*/
   ];
+  //var controller = Provider.of<PropertySetupController>(context, listen: true);
+  bool _isInitialized = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    //controller  = Provider.of<PropertySetupController>(context, listen: false);
+    //controller.getProperty();
 
+  }
   @override
   void initState() {
 
     super.initState();
     fetchProperty();
 
+
   }
+
+
   Future<void> fetchProperty()async{
+    controller = Provider.of<PropertySetupController>(context, listen: false);
+
+
     try{
       setState(() {
         isLoading = true;
       });
-      var controller = Provider.of<PropertySetupController>(context, listen: false);
+
       controller.getProperty();
       setState(() {
-        cardData = controller.unitData;
+
+        filteredData = controller.unitData;
+
         isLoading = false;
       });
     }
     catch(error) {
       setState(() {
-        print(error);
+        print("error ${error}");
         isLoading = false;
       });
     }
@@ -87,226 +107,267 @@ class _PropertyViewState extends State<PropertyView> {
   String selectedFilter = "All";
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context)  {
     // Filter the card data based on the selected filter
-    List<Map<String, dynamic>> filteredData = cardData;
-    if (selectedFilter == "Vacant") {
-      filteredData = cardData.where((unit) => unit['isVacant'] == true).toList();
-    } else if (selectedFilter == "Occupied") {
-      filteredData = cardData.where((unit) => unit['isVacant'] == false).toList();
-    }
+    // List<Map<String, dynamic>> filteredData = cardData;
+    // if (selectedFilter == "Vacant") {
+    //   filteredData = cardData.where((unit) => unit['isVacant'] == true).toList();
+    // } else if (selectedFilter == "Occupied") {
+    //   filteredData = cardData.where((unit) => unit['isVacant'] == false).toList();
+    // }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Property Page"),
-      ),
-      body: Column(
-        children: [
-          // Summary Card
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: isLoading ?  CircularProgressIndicator() : Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Property Name
-                    Text(
-                      propertyName,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blueAccent,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    // Property Address
-                    Text(
-                      propertyAddress,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    // Vacant and Occupied Units
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.apartment, color: Colors.green),
-                            SizedBox(width: 8),
-                            Text(
-                              "Occupied Units: ${cardData.where((unit) => !unit['isVacant']).length}",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Icon(Icons.meeting_room, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text(
-                              "Vacant Units: ${cardData.where((unit) => unit['isVacant']).length}",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+    return Consumer<PropertySetupController>(
+
+        builder: (context, controller, child) {
+
+          //controller = Provider.of<PropertySetupController>(context, listen: true);
+          filteredData = controller.unitData;
+          if (selectedFilter == "Vacant") {
+            filteredData =
+                controller.unitData.where((unit) => unit['isVacant'] == true).toList();
+          } else if (selectedFilter == "Occupied") {
+            filteredData =
+                controller.unitData.where((unit) => unit['isVacant'] == false).toList();
+          }
+          return Scaffold(
+            appBar: AppBar(
+              title: Text("Property Page"),
             ),
-          ),
-
-          // Toggle Button Row
-          // Toggle Button Row
-          Padding(
-            padding: const EdgeInsets.fromLTRB(0,8,0,8),
-            child: Row(
+            body: controller.isLoading? CircularProgressIndicator() : Column(
               children: [
-                Expanded(
-                  child: ToggleButton(
-                    label: "All",
-                    isSelected: selectedFilter == "All",
-                    onTap: () {
-                      setState(() {
-                        selectedFilter = "All";
-                      });
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: ToggleButton(
-                    label: "Vacant",
-                    isSelected: selectedFilter == "Vacant",
-                    onTap: () {
-                      setState(() {
-                        selectedFilter = "Vacant";
-                      });
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: ToggleButton(
-                    label: "Occupied",
-                    isSelected: selectedFilter == "Occupied",
-                    onTap: () {
-                      setState(() {
-                        selectedFilter = "Occupied";
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-
-          // Filtered List of Units
-          Expanded(
-            child: ListView.builder(
-              itemCount: filteredData.length,
-              itemBuilder: (context, index) {
-                final cardItem = filteredData[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                // Summary Card
+                Padding(
+                  padding: const EdgeInsets.all(4.0),
                   child: Card(
                     elevation: 2,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
+                      borderRadius: BorderRadius.circular(12.0),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(12.0),
+                      padding: const EdgeInsets.all(8.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Unit Name
+                          // Property Name
                           Text(
-                            cardItem['name'],
+                            propertyName,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: Colors.blueAccent,
                             ),
                           ),
                           SizedBox(height: 8),
-                          // Bedrooms, Bathrooms, and Square Feet
+                          // Property Address
+                          Text(
+                            propertyAddress,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          // Vacant and Occupied Units
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.bed, size: 16, color: Colors.grey[700]),
-                                  SizedBox(width: 4),
+                                  Icon(Icons.apartment, color: Colors.green),
+                                  SizedBox(width: 8),
                                   Text(
-                                    "${cardItem['bedrooms']} Beds",
-                                    style: TextStyle(fontSize: 14, color: Colors.grey[900]),
+                                    "Occupied Units: ${controller.unitData.where((unit) => unit['isVacant'] == false).length}",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ],
                               ),
                               Row(
                                 children: [
-                                  Icon(Icons.bathtub, size: 16, color: Colors.grey[700]),
-                                  SizedBox(width: 4),
+                                  Icon(Icons.meeting_room, color: Colors.red),
+                                  SizedBox(width: 8),
                                   Text(
-                                    "${cardItem['bathrooms']} Baths",
-                                    style: TextStyle(fontSize: 14, color: Colors.grey[900]),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Icon(Icons.square_foot, size: 16, color: Colors.grey[700]),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    "${cardItem['livingSpace']} sq ft",
-                                    style: TextStyle(fontSize: 14, color: Colors.grey[900]),
+                                    "Vacant : ${controller.unitData.where((unit) => unit['isVacant'] == true).length}",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ],
                               ),
                             ],
                           ),
-                          SizedBox(height: 8),
-                          // Lease Info or Vacancy Status
-                          if (cardItem['isVacant'] == false) ...[
-                            Text(
-                              "Lease: Monthly",
-                              style: TextStyle(fontSize: 14, color: Colors.black87),
-                            ),
-                          ] else ...[
-                            Text(
-                              "Vacant",
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.orange,
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ),
                   ),
-                );
-              },
+                ),
+
+                // Toggle Button Row
+                // Toggle Button Row
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ToggleButton(
+                          label: "All",
+                          isSelected: selectedFilter == "All",
+                          onTap: () {
+                            setState(() {
+                              selectedFilter = "All";
+                            });
+                          },
+                        ),
+                      ),
+                      Expanded(
+                        child: ToggleButton(
+                          label: "Vacant",
+                          isSelected: selectedFilter == "Vacant",
+                          onTap: () {
+                            setState(() {
+                              selectedFilter = "Vacant";
+                            });
+                          },
+                        ),
+                      ),
+                      Expanded(
+                        child: ToggleButton(
+                          label: "Occupied",
+                          isSelected: selectedFilter == "Occupied",
+                          onTap: () {
+                            setState(() {
+                              selectedFilter = "Occupied";
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+
+                // Filtered List of Units
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: filteredData.length,
+                    itemBuilder: (context, index) {
+                      final cardItem = filteredData[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8.0, vertical: 4.0),
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.pushNamed(context, unitSetupScreen,
+                                arguments: filteredData[index]);
+                          },
+                          child: Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Unit Name
+                                  Text(
+                                    "Unit - ${cardItem['unitName']}",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blueAccent,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  // Bedrooms, Bathrooms, and Square Feet
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment
+                                        .spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(Icons.bed, size: 16,
+                                              color: Colors.grey[700]),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            "${cardItem['bedrooms']} Beds",
+                                            style: TextStyle(fontSize: 14,
+                                                color: Colors.grey[900]),
+                                          ),
+                                        ],
+                                      ),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.bathtub, size: 16,
+                                              color: Colors.grey[700]),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            "${cardItem['bathrooms']} Baths",
+                                            style: TextStyle(fontSize: 14,
+                                                color: Colors.grey[900]),
+                                          ),
+                                        ],
+                                      ),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.square_foot, size: 16,
+                                              color: Colors.grey[700]),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            "${cardItem['livingSpace']} sq ft",
+                                            style: TextStyle(fontSize: 14,
+                                                color: Colors.grey[900]),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 8),
+                                  // Lease Info or Vacancy Status
+                                  if (cardItem['isVacant'] == false) ...[
+                                    Text(
+                                      "Leased: ${cardItem['isYearly'] ? "Yearly (exp:"+cardItem['endDate']+")" : "Month to Month"}",
+                                      style: TextStyle(
+                                          fontSize: 14, color: Colors.black87),
+                                    ),
+                                  ] else
+                                    ...[
+                                      Text(
+                                        "Vacant",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.orange,
+                                        ),
+                                      ),
+                                    ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+              ],
             ),
-          ),
-        ],
-      ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {
+                // Add your action here!
+                Navigator.pushNamed(context, propertySetupScreen);
+              },
+              backgroundColor: Colors.orangeAccent,
+              child: const Icon(Icons.add),
+            ),
+
+          );
+        }
     );
   }
 
@@ -357,3 +418,50 @@ class ToggleButton extends StatelessWidget {
     );
   }
 }
+
+class FloatingActionBar extends StatelessWidget {
+  const FloatingActionBar({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.orangeAccent,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            spreadRadius: 2,
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.search, color: Colors.white),
+            onPressed: () {
+              // Action for Search
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.description, color: Colors.white),
+            onPressed: () {
+              // Action for Description
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.white),
+            onPressed: () {
+              // Action for Settings
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
