@@ -135,6 +135,9 @@ class _NewUserPage extends State<NewUserPage>{
                         ReUser updatedUser = ReUser(userController.reUser!.id,
                             emailAddress: userController.reUser!.emailAddress,
                             name: controller.nameController.text,
+                            createdAt: userController.reUser!.createdAt,
+                            lastLogin: userController.reUser!.lastLogin,
+                            status: userController.reUser!.status,
                         userType: controller.userType,
                         );
                         updatedUser.fireBaseId = userController.reUser!.fireBaseId;

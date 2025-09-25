@@ -15,6 +15,8 @@ import 'package:milvertonrealty/utils/google_drive.dart';
 
 
 
+
+
 class UnitPictureScreen extends StatefulWidget {
   final Map<String, dynamic> propertyData;
 
@@ -64,62 +66,31 @@ class _UnitPictureScreenState extends State<UnitPictureScreen> {
 
   final ImagePicker _picker = ImagePicker();
 
-   Future<void> _pickImage(String room) async {
-     // if (kIsWeb) {
-     //   // Web: Use HTML File Picker
-     //   final html.FileUploadInputElement uploadInput = html.FileUploadInputElement();
-     //   uploadInput.accept = 'image/*';
-     //   uploadInput.click();
-     //
-     //   final Completer<Map<String, dynamic>> completer = Completer();
-     //
-     //   uploadInput.onChange.listen((event) async {
-     //     final files = uploadInput.files;
-     //     if (files != null && files.isNotEmpty) {
-     //       final file = files[0];
-     //       final reader = html.FileReader();
-     //       reader.readAsDataUrl(file);
-     //       reader.onLoadEnd.listen((_) {
-     //         completer.complete({"name": file.name, "imageFile": reader.result});
-     //       });
-     //       final Map<String, dynamic> filemap = await completer.future;
-     //       File f = filemap['imageFile'];
-     //       roomImages[room] = [f];
-     //       //roomImages[room] = [file];
-     //     } else {
-     //       completer.complete({"error": "No file selected"});
-     //     }
-     //   });
-     //
-     //   //return completer.future;
-     // }
-     // else {
+
+  Future<List<PlatformFile>> pickMultipleImages() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: true,
+      withData: true, // Required for Web to access file bytes
+    );
+
+    return result?.files ?? [];
+  }
+
+
+
+
+  Future<void> _pickImage(String room) async {
 
      if (kIsWeb) {
-       Uint8List? bytes;
-       String? name;
-       // On the web, use file_picker which returns the file bytes.
-       FilePickerResult? result = await FilePicker.platform.pickFiles(
-         type: FileType.image,
-         allowMultiple: false,
-       );
-       if (result != null && result.files.isNotEmpty) {
-         List<File> tempFiles = [];
-         List<Uint8List> _webImages = [];
-         for (var platformFile in result.files) {
-           // Check if a file path is available (non-web platforms).
-           if (platformFile.path != null) {
-             File file = File(platformFile.path!);
-             tempFiles.add(file);
-           }
-         }
-         // final file = result.files.first;
-         // bytes = file.bytes;
-         // name = file.name;
-         setState(() {
-           roomImages[room]!.addAll(tempFiles);
-         });
-       }
+
+      final List<PlatformFile>? files =  await pickMultipleImages();
+      if (files != null && files.isNotEmpty) {
+        setState(() {
+          roomImages[room]!.addAll(
+              files.map((pfile) => File(pfile.path!)).toList());
+        });
+      }
      }
      else {
        final List<XFile>? pickedFile =

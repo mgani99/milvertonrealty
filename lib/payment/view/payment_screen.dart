@@ -40,8 +40,16 @@ class PaymentTrackerHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Payment Tracker'),
-        backgroundColor: Colors.grey,
+        backgroundColor: Colors.grey[800],
+        title: Text(
+          "Apartment Unit Details",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        //centerTitle: true,
+        elevation: 4,
       ),
       body: ListView.builder(
         itemCount: paymentInfo.length,

@@ -148,6 +148,8 @@ class Tenant extends BaseDomain {
   String workPhoneNumber = "";
   final String email;
   String tenantNote ="";
+  String unitName="";
+  int userId=0;
   Map<String, int> tokens = {}; //tokenize the tenant name for searching
 
   Tenant(super.id, this.name, this.bankAccountId, this.phoneNumber,
@@ -169,13 +171,14 @@ class Tenant extends BaseDomain {
   static Tenant fromMap(Map<dynamic, dynamic> map) {
     Tenant retVal = Tenant.nullTenant();
     retVal = Tenant(
-        map['id'], map['name'], map['bankAccountId'], map['phoneNumber'],
-        map['email']);
+        map['id'], map['name'], map['bankAccountId']?? '', map['phoneNumber']??'',
+        map['email']??'');
     retVal.id = map['id'] ?? 0;
-    retVal.workPhoneNumber = map['workPhoneNumber'];
-    retVal.tenantNote = map['tenantNote'];
+    retVal.workPhoneNumber = map['workPhoneNumber']??'';
+    retVal.tenantNote = map['tenantNote']?? '';
     retVal.tokens[retVal.name.toUpperCase()] = 1;
-
+    retVal.unitName = map['unitName'] ?? '';
+    retVal.userId = map['userId'] ?? 0;
     List<String> subString = [];
     (retVal.tokens.keys.toList()).forEach((element) {
       for (int i = 2; i <= element.length; i++) {
@@ -201,7 +204,8 @@ class Tenant extends BaseDomain {
     data['bankAccountId'] = this.bankAccountId;
     data['email'] = this.email;
     data['phoneNumber'] = this.phoneNumber;
-
+    data['userId'] = this.userId;
+    data['unitName'] = this.unitName;
     return data;
   }
 

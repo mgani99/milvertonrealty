@@ -131,7 +131,9 @@ class _PropertyViewState extends State<PropertyView> {
           }
           return Scaffold(
             appBar: AppBar(
-              title: Text("Property Page"),
+              title: Text("Property Page", style: TextStyle(color: Colors.black),),
+              backgroundColor: Colors.grey,
+
             ),
             body: controller.isLoading? CircularProgressIndicator() : Column(
               children: [
@@ -275,7 +277,7 @@ class _PropertyViewState extends State<PropertyView> {
                                 children: [
                                   // Unit Name
                                   Text(
-                                    "Unit - ${cardItem['unitName']}",
+                                    "Unit : ${cardItem['unitName']}  (${cardItem['tenantName']})",
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -329,11 +331,51 @@ class _PropertyViewState extends State<PropertyView> {
                                   SizedBox(height: 8),
                                   // Lease Info or Vacancy Status
                                   if (cardItem['isVacant'] == false) ...[
-                                    Text(
-                                      "Leased: ${cardItem['isYearly'] ? "Yearly (exp:"+cardItem['endDate']+")" : "Month to Month"}",
-                                      style: TextStyle(
-                                          fontSize: 14, color: Colors.black87),
+
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment
+                                          .spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(Icons.document_scanner_outlined, size: 16,
+                                                color: Colors.grey[700]),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              "${cardItem['isYearly'] ? 'Yearly' : 'M2M'} - ${cardItem['endDate']}",
+                                              style: TextStyle(fontSize: 14,
+                                                  color: Colors.black87),
+                                            ),
+                                          ],
+                                        ),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.currency_exchange_sharp, size: 16,
+                                                color: Colors.grey[700]),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              "Rent: \$${cardItem['rent']}",
+                                              style: TextStyle(fontSize: 14,
+                                                  color: Colors.black87),
+                                            ),
+                                          ],
+                                        ),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.account_balance_rounded, size: 16,
+                                                color: Colors.grey[700]),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              "Sec: \$${cardItem['securityDeposit']} ",
+                                              style: TextStyle(fontSize: 14,
+                                                  color: Colors.grey[900]),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
+
+
                                   ] else
                                     ...[
                                       Text(

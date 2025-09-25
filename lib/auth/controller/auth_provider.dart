@@ -24,14 +24,36 @@ class AuthenticationRepository with ChangeNotifier {
       required String userType,
       required String name}) async {
     try {
+      //If this user is registered in the User, proceed.
+      ReUser usr = await authModel.getReUserByEmailAndRole(email, userType);
+      print(ReUser.getId(usr.emailAddress, userType));
+      if (usr == ReUser.getNullObj()) return "User NOT Registered. Call Support";
+      //Check if this users has other profile, make the other profile default to false.
+
+      List<ReUser> otherProfiles =await authModel.getReUserByEmail(email);
+      if (otherProfiles.length > 1){
+        otherProfiles.forEach((aUsr) {
+          if (aUsr.userType != usr.userType) {
+            aUsr.defaultUserType = false;
+            authModel.addObject(aUsr);
+          }
+        });
+        return null;
+
+      }
+
       userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
       await userCredential.user!.sendEmailVerification();
+      final now = DateTime.now().millisecondsSinceEpoch;
       //_auth.sendSignInLinkToEmail(email: email, actionCodeSettings: actionCodeSettings)
-      ReUser usr = ReUser(email.hashCode, name: name ,  emailAddress: email, userType: userType);
+     // ReUser usr = ReUser(ReUser.getId(email, userType), name: name, emailAddress: email,
+      //    userType: userType, createdAt: now, lastLogin: now, status: 'Active');
       usr.fireBaseId = userCredential.user!.uid;
+      usr.lastLogin = now;
+      usr.createdAt = now;
       authModel.addObject(usr);
       return null; // Return null for successful sign-up
     } on FirebaseAuthException catch (e) {
@@ -48,7 +70,7 @@ class AuthenticationRepository with ChangeNotifier {
 
    fetchUser() async{
     if (_auth.currentUser != null) {
-      reUser = await authModel.getReUser(_auth.currentUser!);
+      reUser = await authModel.fetchUsersByFirebaseId(_auth.currentUser!.uid);
     }
     notifyListeners();
   }
@@ -125,6 +147,7 @@ class AuthenticationRepository with ChangeNotifier {
 
   Future<void> deleteAccount() async {
     try {
+
       final curentUser = _auth.currentUser;
      // await user.deleteOwnerRecords(curentUser!.uid);
       await _auth.currentUser!.delete();
@@ -133,5 +156,11 @@ class AuthenticationRepository with ChangeNotifier {
     } catch (e) {
       print('Error: ${e.toString()}');
     }
+  }
+
+  Future<void> signOut() async {
+    await GoogleSignIn().signOut();
+    await FirebaseAuth.instance.signOut();
+
   }
 }

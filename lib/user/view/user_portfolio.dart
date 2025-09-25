@@ -133,6 +133,9 @@ class _UserPortfolio extends State<UserPortfolio>{
                     ReUser updatedUser = ReUser(userController.reUser!.id,
                       emailAddress: userController.reUser!.emailAddress,
                       name: controller.nameController.text,
+                      createdAt: userController.reUser!.createdAt,
+                      lastLogin: userController.reUser!.lastLogin,
+                      status: userController.reUser!.status,
                     //  lastName: controller.addressController.text,
                       userType: controller.userType,
                     );

@@ -10,6 +10,10 @@ import 'package:milvertonrealty/common/service.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:milvertonrealty/propertysetup/model/property_and_unit.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
+
+import '../../user/controller/user_provider.dart';
+import '../../utils/date_utils.dart';
 
 
 class PropertySetupController extends ChangeNotifier {
@@ -167,6 +171,7 @@ class PropertySetupController extends ChangeNotifier {
 
         print('found lease ${ld}');
         ld['leaseId'] = value['currentLeaseId'];
+        ld['dueDate'] = Utils.getDayWithSuffix(ld['startDate']);
         combinedJson = {...combinedJson, ...ld};
         List<int> ids = List<int>.from(jsonDecode(ld['tenantIds'].toString() ?? "[0]"));
         print("Tenant id ${ids[0]}");
@@ -416,7 +421,7 @@ class PropertySetupController extends ChangeNotifier {
 
   }
 
-  void saveTenant(Map<String, dynamic> data) {
+  void saveTenant(Map<String, dynamic> data, BuildContext ctx) async{
 
     data['phoneNumber'] = phoneNumberController.text;
     data['workPhoneNumber'] = workPhoneNumberController.text;
@@ -427,6 +432,20 @@ class PropertySetupController extends ChangeNotifier {
     model.update(Tenant.rootDBLocation+data['tenantId'].toString(), 'workPhoneNumber', data['workPhoneNumber']);
     model.update(Tenant.rootDBLocation+data['tenantId'].toString(), 'email', data['email']);
     model.update(Tenant.rootDBLocation+data['tenantId'].toString(), 'tenantNotes', data['tenantNote']);
+    model.update(Tenant.rootDBLocation+data['tenantId'].toString(), 'unitName', data['unitName']);
+
+
+    //add Tenant as users
+    if (emailController.text.isNotEmpty) {
+      final prov = ctx.read<UserProvider>();
+
+      final name = data['tenantName'];
+      final email = data['email'];
+      int id = await prov.createUser(name, email, 'Tenant', 'Inactive');
+      model.update(Tenant.rootDBLocation+data['tenantId'].toString(), 'userId', id );
+
+    }
+
     print(data);
 
   }

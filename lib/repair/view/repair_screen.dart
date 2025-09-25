@@ -1,10 +1,14 @@
 import 'dart:io';
 
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:milvertonrealty/common/domain/Repair.dart';
+import 'package:milvertonrealty/common/service.dart';
 import 'package:milvertonrealty/repair/controller/repair_controller.dart';
 import 'package:provider/provider.dart';
+
+import '../../propertysetup/controller/propertyUnitController.dart';
 
 void main() {
   runApp(MyApp());
@@ -26,6 +30,7 @@ class RepairIssueScreen extends StatefulWidget {
 
 class _MultiStepFormState extends State<RepairIssueScreen> {
   PageController _pageController = PageController();
+  TextEditingController _repairDescriptionController = TextEditingController();
   List<String> selectedRooms = [];
   /*Map<String, List<String>> roomToSubcategories = {
     "Bathroom": ["Toilet Leak", "Broken Shower"],
@@ -70,9 +75,9 @@ class _MultiStepFormState extends State<RepairIssueScreen> {
   }
   Future<void> fetchCategory()async{
     try{
-      Map<String, List<String>> cats  = await Provider.of<RepairController>(context, listen: false).getRepairCategory();
+     // Map<String, List<String>> cats  = await Provider.of<RepairController>(context, listen: false).getRepairCategory();
       setState(() {
-        roomToSubcategories = cats;
+        //roomToSubcategories = cats;
         isLoading = false;
       });
     }
@@ -182,6 +187,7 @@ class StepOne extends StatelessWidget {
 
 class StepTwo extends StatefulWidget {
   final List<String> selectedRooms;
+  TextEditingController _repairDescriptionController = TextEditingController();
   final Map<String, List<String>> roomToSubcategories;
   final Map<String, List<String>> selectedSubcategories;
   final Map<String, List<String>> subcategoryImages; // Tracks uploaded images
@@ -270,6 +276,7 @@ class _StepTwoState extends State<StepTwo> {
           Expanded(
             child: ListView(
               children: widget.selectedRooms.map((room) {
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -293,8 +300,7 @@ class _StepTwoState extends State<StepTwo> {
                               widget.selectedSubcategories[room] = (widget.selectedSubcategories[room] ?? [])
                                 ..add(subcategory);
 
-                              // Prompt user for picture upload
-                              promptForPictureUpload(context, room, subcategory);
+
                             } else {
                               widget.selectedSubcategories[room]?.remove(subcategory);
                               widget.subcategoryImages.remove(subcategory); // Remove uploaded images
@@ -305,30 +311,21 @@ class _StepTwoState extends State<StepTwo> {
                       )
                           .toList(),
                     ),
+                    TextField(
+                      controller: widget._repairDescriptionController,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: "Type in issues not Listed",
+                      ),
+                      maxLines: 2,
+                    ),
                     SizedBox(height: 16),
                   ],
                 );
               }).toList(),
             ),
           ),
-          Expanded(
-            child: _images.isEmpty
-                ? Center(child: Text("No images uploaded"))
-                : ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _images.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Image.file(
-                    _images[index],
-                    width: 150,
-                    fit: BoxFit.cover,
-                  ),
-                );
-              },
-            ),
-          ),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -441,7 +438,7 @@ class StepThree extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () {
                       // Final submission action
-                      Provider.of<RepairController>(context, listen: false).saveRepair(selectedRooms, selectedSubcategories);
+                      //Provider.of<RepairController>(context, listen: false).saveRepair(selectedRooms, selectedSubcategories);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text("Form Submitted!")),
                       );
@@ -466,3 +463,158 @@ class StepThree extends StatelessWidget {
 
   }
 }
+
+
+class CopyNodeScreen extends StatefulWidget {
+  const CopyNodeScreen({Key? key}) : super(key: key);
+
+  @override
+  _CopyNodeScreenState createState() => _CopyNodeScreenState();
+}
+
+class _CopyNodeScreenState extends State<CopyNodeScreen> {
+  final TextEditingController _sourceController = TextEditingController();
+  final TextEditingController _backupController = TextEditingController();
+  bool _isCopying = false;
+  String _message = '';
+  List<Map<String, dynamic>> unitData = [];
+
+
+  /// Copies data from the [sourceNode] to the [backupNode] in Firebase Realtime Database.
+  Future<void> _copyData() async {
+    String sourceNode = _sourceController.text.trim();
+    String backupNode = _backupController.text.trim();
+
+    if (sourceNode.isEmpty || backupNode.isEmpty) {
+      setState(() {
+        _message = "Please fill in both source and backup node paths.";
+      });
+      return;
+    }
+
+    setState(() {
+      _isCopying = true;
+      _message = '';
+    });
+
+    try {
+      // Reference to the source node.
+      DatabaseReference sourceRef = MR_DBService().getDBRef(sourceNode);
+      // Reference to the backup node.
+      DatabaseReference backupRef = MR_DBService().getDBRef(backupNode);
+
+      // Get the snapshot of the source node.
+      DataSnapshot snapshot = await sourceRef.get();
+      if (snapshot.exists && snapshot.value != null) {
+        // Check if the snapshot is a Map (i.e., containing multiple objects)
+        if (snapshot.value is Map) {
+          Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+          // Iterate through each entry and copy it to the backup node.
+          for (final entry in data.entries) {
+            //print("in complex ${entry.key.toString()}");
+            unitData.forEach((element ) async{
+
+              if (element['unitName'] == entry.value['unitNumber']) {
+                String unitId = element['unitId'].toString();
+                entry.value['unitId'] = element['unitId'].toString();
+               // print(entry.value);
+                print("copying ${element['unitName']}");
+                await backupRef.child(unitId.toString()).child(entry.key.toString()).set(entry.value);
+              }
+            });
+
+            //await backupRef.child(entry.key.toString()).set(entry.value);
+          }
+        } else {
+          // For simple values, copy the value directly.
+          print("in simple ${snapshot.value}");
+          //await backupRef.set(snapshot.value);
+        }
+        setState(() {
+          _message = "Data copied successfully.";
+        });
+      } else {
+        setState(() {
+          _message = "Source node does not exist or is empty.";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _message = "Error: $e";
+      });
+    } finally {
+      setState(() {
+        _isCopying = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _sourceController.dispose();
+    _backupController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Provider.of<PropertySetupController>(context, listen: true);
+    unitData = controller.unitData;
+    if (unitData.isEmpty) {
+      controller.getProperty();
+    }
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Firebase Node Copier"),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _sourceController,
+              decoration: const InputDecoration(
+                labelText: "Source Node Path",
+                hintText: "e.g., /entries",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _backupController,
+              decoration: const InputDecoration(
+                labelText: "Backup Node Path",
+                hintText: "e.g., /backup_entries",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: _isCopying ? null : _copyData,
+              child: _isCopying
+                  ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ))
+                  : const Text("Copy Data"),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _message,
+              style: TextStyle(
+                color: _message.startsWith("Error")
+                    ? Colors.red
+                    : Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

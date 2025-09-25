@@ -7,8 +7,10 @@ import 'package:milvertonrealty/propertysetup/view/propertysetup_screen.dart';
 import 'package:milvertonrealty/propertysetup/view/unit_picture_screen.dart';
 import 'package:milvertonrealty/propertysetup/view/unitsetup_screen.dart';
 import 'package:milvertonrealty/route/route_constants.dart';
+import 'package:milvertonrealty/user/view/dashboard_screen.dart';
 import 'package:milvertonrealty/user/view/new_user.dart';
 import 'package:milvertonrealty/user/view/profile_page.dart';
+import '../propertysetup/view/tenant_lead2.dart';
 import 'screen_export.dart';
 
 // Yuo will get 50+ screens and more once you have the full template
@@ -98,6 +100,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
         builder: (context) =>  PropertyView(),
       );
 
+    // case addTenantLeadViewRoute:
+    //   return MaterialPageRoute(
+    //     builder: (context) =>  AddTenantLeadPage(),
+    //   );
+
     case unitPictureScreenRoute:
       return MaterialPageRoute(
         builder: (context) {
@@ -178,6 +185,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case homeScreenRoute:
       return MaterialPageRoute(
         builder: (context) => const HomeScreen(),
+      );
+    case userDashboardRoute:
+      return MaterialPageRoute(
+        builder: (context) =>  DashboardScreen(),
       );
     // case brandScreenRoute:
     //   return MaterialPageRoute(

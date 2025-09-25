@@ -8,10 +8,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:milvertonrealty/auth/controller/auth_provider.dart';
 import 'package:milvertonrealty/common/domain/user.dart';
+import 'package:milvertonrealty/home/controller/app_data.dart';
 import 'package:milvertonrealty/home/controller/bottomnavbar_controller.dart';
 import 'package:milvertonrealty/route/route_constants.dart';
 import 'package:milvertonrealty/utils/constants.dart';
 import 'package:provider/provider.dart';
+
+import '../../propertysetup/controller/propertyUnitController.dart';
 
 class HomeScreen extends StatefulWidget {
 
@@ -27,14 +30,17 @@ class _HomeScreen extends State<HomeScreen> {
   void initState() {
     super.initState();
     final controller = Provider.of<AuthenticationRepository>(context, listen: false);
+
     controller.fetchUser();
     requestPermission();
     getFCMToken();
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print("🔹 Foreground Message: ${message.notification?.title}");
+      //print("🔹 Foreground Message: ${message.notification?.title}");
       controller.authModel.updateFCMKeyForUser(controller.reUser!, fcmToken!);
 
+
     });
+
   }
 
   void requestPermission() async {
@@ -47,6 +53,7 @@ class _HomeScreen extends State<HomeScreen> {
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       print("User granted permission");
+
     } else {
       print("User denied permission");
     }
@@ -61,13 +68,14 @@ class _HomeScreen extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final usrController = Provider.of<AuthenticationRepository>(context, listen: true);
-
+    final appData = Provider.of<AppData>(context, listen: true);
     NavBarController navBarController = Provider.of<NavBarController>(context);
+    //navBarController.selectedIndex = 0;
+
     return Scaffold(
       backgroundColor: ColorConstants.primaryWhiteColor,
       body: Provider.of<NavBarController>(context)
-          .getPages(usrController.reUser!)[Provider.of<NavBarController>(context).selectedIndex],
+          .getPages(appData)[Provider.of<NavBarController>(context).selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         elevation: 0,
         backgroundColor: ColorConstants.primaryWhiteColor,
@@ -90,31 +98,33 @@ class _HomeScreen extends State<HomeScreen> {
         IconThemeData(size: 25, color: ColorConstants.primaryBlackColor),
         selectedIconTheme:
         IconThemeData(size: 25, color: ColorConstants.primaryBlackColor),
-        items: getBottomNavBarItemsForUser(usrController.reUser!, navBarController),
+        items: getBottomNavBarItemsForUser(appData, navBarController),
 
 
       ),
     );
   }
 
-  List<BottomNavigationBarItem> getBottomNavBarItemsForUser(ReUser reUsr, NavBarController navBarController ) {
+  List<BottomNavigationBarItem> getBottomNavBarItemsForUser(AppData appData, NavBarController navBarController ) {
     List<BottomNavigationBarItem> retVal = [];
     retVal.add(getHome(navBarController,0));
 
-    if (reUsr.name.isNotEmpty) {
+    if (appData.currentUserName!.isNotEmpty) {
       //if User is setup, for Owner show Home, Property, Income, Expense, Repairs, Profile
       //for Contractor Home, Repair, Profile
-      if ("Tenant" == reUsr!.userType || "Contractor" == reUsr.userType) {
+      if ("tenant" == appData.settings['role'].toString().toLowerCase() ||
+          "contractor" == appData.settings['role'].toString().toLowerCase()) {
         retVal.add(getRepair(navBarController,1));
         retVal.add(getProfile(navBarController,2));
 
       }
-      else if ("Owner" == reUsr!.userType) {
-        retVal.add(getRepair(navBarController,1));
-        retVal.add(getExpense(navBarController,2));
-        retVal.add(getProperty(navBarController,3));
-        retVal.add(getPayment(navBarController,4));
-        retVal.add(getProfile(navBarController,5));
+      else if ("owner" == appData.settings['role'].toString().toLowerCase()) {
+        retVal.add(getTenantLeads(navBarController, 1));
+        retVal.add(getRepair(navBarController,2));
+        retVal.add(getExpense(navBarController,3));
+        retVal.add(getProperty(navBarController,4));
+        retVal.add(getPayment(navBarController,5));
+        retVal.add(getProfile(navBarController,6));
 
 
 
@@ -166,7 +176,7 @@ class _HomeScreen extends State<HomeScreen> {
   }
 
 
-  BottomNavigationBarItem getRepair(NavBarController navBarController, selectIndex) {
+  BottomNavigationBarItem getTenantLeads(NavBarController navBarController,int selectIndex) {
     return BottomNavigationBarItem(
         icon: Icon(
           navBarController.selectedIndex == selectIndex
@@ -176,7 +186,15 @@ class _HomeScreen extends State<HomeScreen> {
         label: 'Tenant \nLeads');
   }
 
-
+  BottomNavigationBarItem getRepair(NavBarController navBarController,int selectIndex) {
+    return BottomNavigationBarItem(
+        icon: Icon(
+          navBarController.selectedIndex == selectIndex
+              ? Icons.handyman_outlined
+              : Icons.handyman_rounded,
+        ),
+        label: 'Repair');
+  }
 
   BottomNavigationBarItem getProfile(NavBarController navBarController,int selectIndex) {
       return BottomNavigationBarItem(
@@ -188,7 +206,6 @@ class _HomeScreen extends State<HomeScreen> {
         label: 'Profile',
       );
   }
-
   BottomNavigationBarItem getExpense(NavBarController navBarController, int selectIndex) {
     return BottomNavigationBarItem(
         icon: Icon(

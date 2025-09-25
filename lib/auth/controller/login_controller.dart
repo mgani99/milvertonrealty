@@ -1,10 +1,11 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
+
 import 'package:flutter/material.dart';
 import 'package:milvertonrealty/auth/controller/auth_provider.dart';
 import 'package:milvertonrealty/common/domain/user.dart';
+import 'package:milvertonrealty/home/controller/app_data.dart';
 import 'package:milvertonrealty/home/view/home_screen.dart';
 import 'package:milvertonrealty/init_screens/full_screen_loader.dart';
 import 'package:milvertonrealty/route/route_constants.dart';
@@ -12,6 +13,10 @@ import 'package:milvertonrealty/user/view/new_user.dart';
 import 'package:milvertonrealty/utils/network_utility.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../common/domain/common.dart';
+import '../../home/controller/bottomnavbar_controller.dart';
+import '../../propertysetup/controller/propertyUnitController.dart';
 
 class LoginController with ChangeNotifier {
   final emailController = TextEditingController();
@@ -64,7 +69,7 @@ class LoginController with ChangeNotifier {
       );
 
       if (credential.user != null && credential.user!.emailVerified) {
-        ReUser reUser = await authProvider.authModel.getReUser(credential.user!);
+        ReUser reUser = await authProvider.authModel.fetchUsersByFirebaseId(credential.user!.uid);
 
         FullScreenLoader.stopLoadin(context);
         if (reUser ==  ReUser.getNullObj()) {
@@ -73,6 +78,30 @@ class LoginController with ChangeNotifier {
               content: Text('User Authenticated but Not setup. Call Support')));
         }
         else {
+          //update last login time and status from Inactive to Active
+
+          //reUser!.fcmKey = fcmToken!;
+          reUser.lastLogin = DateTime.now().millisecondsSinceEpoch;
+          reUser.status= 'Active';
+          authProvider.authModel.addObject(reUser);
+          //get business object and set up AppData
+          final appData = Provider.of<AppData>(context, listen: false);
+          if (reUser.userType.toLowerCase() == 'tenant') {
+            appData.settings['unitName'] = '';
+            final propController  = Provider.of<PropertySetupController>(context, listen: false);
+            Tenant tenant  =await propController.model.getTenantByUserId(reUser.id);
+            if (tenant != Tenant.nullTenant()) {
+              appData.settings['unitName'] = tenant.unitName;
+            }
+          }
+
+
+          appData.currentUserName = reUser.name;
+          appData.currentUserId = reUser.id.toString();
+          appData.authToken = reUser.fireBaseId;
+          appData.settings['role'] = reUser.userType;
+          Provider.of<NavBarController>(context, listen: false).onNavTap(0);
+
           Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(

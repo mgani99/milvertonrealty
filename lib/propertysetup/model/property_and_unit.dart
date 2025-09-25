@@ -10,6 +10,8 @@ import 'package:milvertonrealty/common/model/common_model.dart';
 import 'package:milvertonrealty/common/service.dart';
 import 'package:provider/provider.dart';
 
+import '../../utils/date_utils.dart';
+
 class PropertyUnitModel extends BaseModel {
   static Future<List<Unit>> getUnits() async {
     final List<Unit> retVal = [];
@@ -21,6 +23,7 @@ class PropertyUnitModel extends BaseModel {
     });
     return retVal;
   }
+
 
   static Future<List<Tenant>> getTenants() async {
     final List<Tenant> retVal = [];
@@ -34,6 +37,19 @@ class PropertyUnitModel extends BaseModel {
     return retVal;
   }
 
+  Future<Tenant> getTenantByUserId(int userId) async {
+
+    Tenant retVal = Tenant.nullTenant();
+    final tenants = await getTenants();
+    tenants.forEach((element) {
+      if (element.userId == userId) {
+        retVal = element;
+
+      }
+    });
+
+    return retVal;
+  }
   static Future<List<LeaseDetails>> getLeaseDetails() async {
     final List<LeaseDetails> retVal = [];
     final snapshot = await MR_DBService().getDBRef(LeaseDetails.rootDBLocation).get();
@@ -71,14 +87,16 @@ class PropertyUnitModel extends BaseModel {
       if (leaseDtls.containsKey(value['currentLeaseId'].toString())) {
         final ld = leaseDtls[value['currentLeaseId'].toString()];
         ld['leaseId'] = value['currentLeaseId'];
+        ld['dueDate'] =Utils.getDayWithSuffix(ld['startDate']);
+        //print(ld);
         combinedJson = {...combinedJson, ...ld};
         List<int> ids = List<int>.from(jsonDecode(ld['tenantIds'].toString() ?? "[0]"));
-        print("Tenant id ${ids[0]}");
+        //print("Tenant id ${ids[0]}");
         if (tenants.containsKey(ids[0].toString())) {
           final tenant = tenants[ids[0].toString()];
 
           if (tenant != null) {
-            print("tenant name ${tenant['name']}");
+            //print("tenant name ${tenant['name']}");
             tenant['tenantId'] = tenant['id'];
             tenant['tenantName'] = tenant['name'];
             combinedJson = {...combinedJson, ...tenant};

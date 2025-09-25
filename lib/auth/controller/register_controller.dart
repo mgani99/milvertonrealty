@@ -15,7 +15,7 @@ class SignInController with ChangeNotifier {
   bool hidePassword = true;
   final ConnectionChecker connection = ConnectionChecker();
   final loadingController = FullScreenLoader();
-  String userType = "Owner";
+  String userType = "Tenant";
 
 //------------------------------------------------------------------------------Register
   signin(context) async {

@@ -1,11 +1,15 @@
 
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:googleapis_auth/auth_io.dart';
 import 'package:http/http.dart';
 
 
 class GoogleDriveManager {
+  List<String> usersEmail = ['mohammed.gani@gmail.com', 'tazman536@gmail.com', 'Faisol.islam@gmail.com'];
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: [
       'email',
@@ -46,7 +50,7 @@ class GoogleDriveManager {
       fileMetadata,
       uploadMedia: media,
     );
-
+    shareFileWithUsers(driveApi: driveApi, fileId: uploadedFile.id!, userEmails: usersEmail);
     print("File uploaded successfully! File ID: ${uploadedFile.id}");
   }
 
@@ -80,7 +84,7 @@ class GoogleDriveManager {
     folder.mimeType = "application/vnd.google-apps.folder";
 
     final createdFolder = await driveApi.files.create(folder);
-
+    shareFileWithUsers(driveApi: driveApi, fileId: createdFolder.id!, userEmails: usersEmail);
     print("Folder created: ${createdFolder.name}, ID: ${createdFolder.id}");
     return createdFolder.id!;
   }
@@ -105,81 +109,135 @@ class GoogleDriveManager {
       fileMetadata,
       uploadMedia: media,
     );
+    shareFileWithUsers(driveApi: driveApi, fileId: uploadedFile.id!, userEmails: usersEmail);
+  }
+
+  Future<void> uploadToDrive(
+      drive.DriveApi driveApi,
+      List<PlatformFile> files,
+      ) async {
+    for (final f in files) {
+      final media = drive.Media(
+        Stream.value(f.bytes!),  // raw bytes from file_picker
+        f.bytes!.length,
+      );
+      final driveFile = drive.File()..name = f.name;
+      await driveApi.files.create(driveFile, uploadMedia: media);
+    }
+  }
+
+  Future<void> uploadFilesFromWeb(String folderId, List<PlatformFile> files) async {
+    if (_currentUser == null) {
+      throw Exception("User is not signed in.");
+    }
+
+    // Authenticate and create the Drive API client
+    final authHeaders = await _currentUser!.authHeaders;
+    final authenticatedClient = AuthenticatedClient(authHeaders);
+
+    final driveApi = drive.DriveApi(authenticatedClient);
+    for (final file in files) {
+      final media = drive.Media(Stream.value(file.bytes!), file.bytes!.length,);
+      final driveFile = drive.File()
+        ..name = file.name;
+      //await driveApi.files.create(driveFile, uploadMedia: media);
+      var fileMetadata = driveFile;
+      fileMetadata.name = file.name; // Use the file's name
+      fileMetadata.parents = [folderId]; // Specify the shared folder ID
+
+      // Upload the file
+      //var media = drive.Media(file.openRead(), file.lengthSync());
+      final uploadedFile = await driveApi.files.create(
+        fileMetadata,
+        uploadMedia: media,
+      );
+      shareFileWithUsers(
+          driveApi: driveApi, fileId: uploadedFile.id!, userEmails: usersEmail);
+    }
+  }
+
+  Future<String> uploadFileFromWeb(String folderId, PlatformFile file) async {
+    if (_currentUser == null) {
+      throw Exception("User is not signed in.");
+    }
+
+    // Authenticate and create the Drive API client
+    final authHeaders = await _currentUser!.authHeaders;
+    final authenticatedClient = AuthenticatedClient(authHeaders);
+
+    final driveApi = drive.DriveApi(authenticatedClient);
+
+      final media = drive.Media(Stream.value(file.bytes!), file.bytes!.length,);
+      final driveFile = drive.File()
+        ..name = file.name;
+      //await driveApi.files.create(driveFile, uploadMedia: media);
+      var fileMetadata = driveFile;
+      fileMetadata.name = file.name; // Use the file's name
+      fileMetadata.parents = [folderId]; // Specify the shared folder ID
+
+      // Upload the file
+      //var media = drive.Media(file.openRead(), file.lengthSync());
+      final uploadedFile = await driveApi.files.create(
+        fileMetadata,
+        uploadMedia: media,
+      );
+      shareFileWithUsers(
+          driveApi: driveApi, fileId: uploadedFile.id!, userEmails: usersEmail);
+
+      return 'https://drive.google.com/uc?id=${uploadedFile.id}';
+  }
+  Future<String> uploadFile(Uint8List bytes, String filename) async {
+    await signIn();
+    final authHeaders = await _currentUser!.authHeaders;
+    final client = authenticatedClient(
+      Client(),
+      AccessCredentials.fromJson(authHeaders),
+    );
+
+    final api = drive.DriveApi(client);
+    final media = drive.Media(Stream.fromIterable([bytes]), bytes.length);
+    final file = await api.files.create(
+      drive.File()..name = filename,
+      uploadMedia: media,
+    );
+    return 'https://drive.google.com/uc?id=${file.id}';
   }
 
 
-  /*final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['https://www.googleapis.com/auth/drive.file'],
-  );
-  Future<void> uploadToGoogleDrive() async {
-    final account = await _googleSignIn.signIn();
-
-    if (account == null) {
-      return; // User canceled sign-in
+  Future<void> shareFileWithUsers({
+    required drive.DriveApi driveApi,
+    required String fileId,
+    required List<String> userEmails,
+    String role = 'writer',
+  }) async {
+    for (final email in userEmails) {
+      await shareFileWithUser(
+        driveApi: driveApi,
+        fileId: fileId,
+        userEmail: email,
+        role: role,
+      );
     }
-
-    final authHeaders = await account.authHeaders;
-    final httpClient = http.Client();
-
-    try {
-      for (var category in uploadedImages.keys) {
-        for (var imageFile in uploadedImages[category]!) {
-          var request = http.MultipartRequest(
-            'POST',
-            Uri.parse('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart'),
-          );
-          String accessToken = authHeaders['Authorization']!;
-          request.headers['Authorization'] = accessToken;
-          request.headers['Content-Type'] = 'multipart/related; boundary=boundary';
-
-          final metadata = {
-            'name': imageFile.path.split('/').last,
-            'mimeType': 'image/jpeg', // Replace with the correct MIME type
-          };
-
-          final metadataPart = http.MultipartFile.fromString(
-            'metadata',
-            jsonEncode(metadata),
-            contentType: MediaType('application', 'json'),
-          );
-
-          final filePart = await http.MultipartFile.fromPath(
-            'file',
-            imageFile.path,
-            contentType: MediaType('image', 'jpeg'), // Replace with the correct MIME type
-          );
-          print('$accessToken');
-
-
-
-          //addAll(authHeaders);
-          // request.fields['name'] = im  ageFile.path.split('/').last;
-          // String? mimeType = lookupMimeType(imageFile.path);
-          // request.fields['mimeType'] = mimeType ?? 'application/octet-stream';
-          // //request.fields['mimeType'] = 'image/jpeg';
-
-          // request.files.add(await http.MultipartFile.fromPath(
-          //   'file',
-          //   imageFile.path,
-          // ));
-          request.files.add(metadataPart);
-          request.files.add(filePart);
-
-          final response = await request.send();
-          var strresponse = await http.Response.fromStream(response);
-          print(request.files);
-          if (response.statusCode == 200) {
-            print('Image uploaded successfully: ${imageFile.path}');
-          } else {
-
-            print('Failed to upload image: ${strresponse.body}');
-          }
-        }
-      }
-    } finally {
-      httpClient.close();
-    }
-  }*/
+  }
+  Future<void> shareFileWithUser({
+    required drive.DriveApi driveApi,
+    required String fileId,
+    required String userEmail,
+    String role = 'writer',                // 'reader', 'writer', 'commenter'
+    bool sendNotificationEmail = true,     // send the share email
+  }) async {
+    final permission = drive.Permission()
+      ..type = 'user'
+      ..role = role
+      ..emailAddress = userEmail;
+    print('setting permission for ${fileId}');
+    await driveApi.permissions.create(
+      permission,
+      fileId,
+      sendNotificationEmail: sendNotificationEmail,
+      supportsAllDrives: true,             // if you’re using Shared Drives
+    );
+  }
 }
 // AuthenticatedClient for making authenticated requests
 class AuthenticatedClient extends BaseClient {
